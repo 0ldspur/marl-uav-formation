@@ -1,0 +1,11 @@
+pybullet
+numpy
+matplotlib
+torch
+gym
+wandb
+tensorboard
+opencv-python
+scipy
+PyYAML
+crazyflie
