@@ -1,102 +1,161 @@
+import gym
+import numpy as np
 import pybullet as p
 import pybullet_data
-import numpy as np
-import gym
 from gym import spaces
-import time
 
 class MultiUAVEnv(gym.Env):
-    def __init__(self, render=False, num_agents=4):
-        super(MultiUAVEnv, self).__init__()
-        self.render = render
+    def __init__(
+        self,
+        render_mode="headless",
+        num_agents=4,
+        action_scales=(0.5, 0.2, 0.1),
+        max_steps=300,
+        goal_tol=0.5,
+        formation_tol=15.0,    # Looser for easier learning, tighten later
+        goal_bonus=1500.0,
+        formation_penalty=-1.0,   # Range: -0.5 to -1.5
+        mean_penalty=-0.4,        # Range: -0.2 to -1.0
+        cohesion_bonus_weight=10.0, # Range: 5.0 to 15.0
+        progress_weight=0.3,      # Range: 0.1 to 0.5
+        alive_reward=0.5          # Reduce if agents only "survive"
+    ):
+        super().__init__()
         self.num_agents = num_agents
+        self.action_scales = action_scales
+        self.max_steps = max_steps
+        self.render_mode = render_mode
+        self.goal_tol = goal_tol
+        self.formation_tol = formation_tol
+        self.goal_bonus = goal_bonus
+        self.formation_penalty = formation_penalty
+        self.mean_penalty = mean_penalty
+        self.cohesion_bonus_weight = cohesion_bonus_weight
+        self.progress_weight = progress_weight
+        self.alive_reward = alive_reward
 
-        if self.render:
-            self.client = p.connect(p.GUI)
-        else:
-            self.client = p.connect(p.DIRECT)
-
-        # Clean GUI setup
-        p.configureDebugVisualizer(p.COV_ENABLE_GUI, 0)
-        p.configureDebugVisualizer(p.COV_ENABLE_SHADOWS, 1)
-        p.configureDebugVisualizer(p.COV_ENABLE_RGB_BUFFER_PREVIEW, 0)
-        p.configureDebugVisualizer(p.COV_ENABLE_DEPTH_BUFFER_PREVIEW, 0)
-        p.configureDebugVisualizer(p.COV_ENABLE_SEGMENTATION_MARK_PREVIEW, 0)
-
-        # Set up simulation world
+        self.client = p.connect(p.GUI if render_mode in ["2d", "3d"] else p.DIRECT)
         p.setGravity(0, 0, -9.8)
         p.setAdditionalSearchPath(pybullet_data.getDataPath())
-        self.plane = p.loadURDF("plane.urdf")
+        p.loadURDF("plane.urdf")
 
-        # Define start positions for 4 UAVs
-        self.start_positions = [
-            [0, 0, 1],
-            [1, 0, 1],
-            [0, 1, 1],
-            [1, 1, 1],
-        ] 
-        self.formation_target = [
-            [0, 0, 1],
-            [1, 0, 1],
-            [0, 1, 1],
-            [1, 1, 1],
-        ]        
+        self.center_A = np.array([0.0, 0.0, 1.2])
+        self.center_B = np.array([15.0, 0.0, 1.2])
+        self.offsets = np.array([[0, 0, 0], [1, 0, 0], [0, 1, 0], [1, 1, 0]], dtype=np.float32)
+        self.offsets_centered = self.offsets - self.offsets.mean(axis=0)
 
         self.drones = []
-        for i in range(self.num_agents):
-            drone = p.loadURDF("sphere2.urdf", self.start_positions[i])
-            self.drones.append(drone)
+        for off in self.offsets:
+            pos = (self.center_A + off).tolist()
+            self.drones.append(p.loadURDF("sphere2.urdf", pos, globalScaling=0.15))
 
-        # Reset camera for visibility
-        p.resetDebugVisualizerCamera(cameraDistance=4, cameraYaw=45, cameraPitch=-30, cameraTargetPosition=[0.5, 0.5, 1])
+        if render_mode in ("2d", "3d"):
+            green = p.createVisualShape(p.GEOM_SPHERE, 0.1, rgbaColor=[0, 1, 0, 1])
+            red = p.createVisualShape(p.GEOM_SPHERE, 0.1, rgbaColor=[1, 0, 0, 1])
+            p.createMultiBody(0, green, basePosition=self.center_A)
+            p.createMultiBody(0, red, basePosition=self.center_B)
+            cam_pos = (self.center_A + self.center_B) / 2 + np.array([0, -5, 2])
+            cam_pitch = -30 if render_mode == "3d" else -89
+            p.resetDebugVisualizerCamera(20, 90, cam_pitch, cam_pos.tolist())
 
-        # Define observation and action spaces
-        self.observation_space = spaces.Box(low=-np.inf, high=np.inf, shape=(self.num_agents * 3,), dtype=np.float32)
-        self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(self.num_agents * 3,), dtype=np.float32)
+        dim = 9 * self.num_agents
+        self.observation_space = spaces.Box(-np.inf, np.inf, (dim,), dtype=np.float32)
+        self.action_space = spaces.Box(-1.0, 1.0, (3 * self.num_agents,), dtype=np.float32)
+
+        self.step_count = 0
+        self.prev_centroid_x = 0
+        self.got_goal_bonus = False
 
     def reset(self):
-        for i, drone in enumerate(self.drones):
-            p.resetBasePositionAndOrientation(drone, self.start_positions[i], [0, 0, 0, 1])
+        self.step_count = 0
+        self.got_goal_bonus = False
+
+        for d, off in zip(self.drones, self.offsets_centered + self.center_A):
+            p.resetBasePositionAndOrientation(d, off.tolist(), [0, 0, 0, 1])
+            p.resetBaseVelocity(d, [0, 0, 0], [0, 0, 0])
+
+        p.stepSimulation()
+        poses = [p.getBasePositionAndOrientation(d)[0] for d in self.drones]
+        xs = [pos[0] for pos in poses]
+        self.prev_centroid_x = np.mean(xs)
         return self._get_obs()
 
     def step(self, action):
-        action = np.clip(action, -1.0, 1.0)
-        for i, drone in enumerate(self.drones):
-            vx, vy, vz = action[i*3:(i+1)*3]
-            pos, _ = p.getBasePositionAndOrientation(drone)
-            new_pos = [pos[0] + vx * 0.05, pos[1] + vy * 0.05, pos[2] + vz * 0.05]
-            p.resetBasePositionAndOrientation(drone, new_pos, [0, 0, 0, 1])
-        p.stepSimulation()
-        obs = self._get_obs()
-        
-        reward = 0.0
-        for i, drone in enumerate(self.drones):
-            pos, _ = p.getBasePositionAndOrientation(drone)
-            target = np.array(self.formation_target[i])
-            reward = np.linalg.norm(np.array(pos) -target)
-            
-        done = False
-        return obs, -reward, done, {}
+        self.step_count += 1
+        act = np.clip(action, -1, 1).reshape(self.num_agents, 3)
+        sx, sy, sz = self.action_scales
 
+        for (vx, vy, vz), d in zip(act, self.drones):
+            pos, orn = p.getBasePositionAndOrientation(d)
+            newp = [pos[0] + vx * sx, pos[1] + vy * sy, np.clip(pos[2] + vz * sz, 0.6, 5.0)]
+            p.resetBasePositionAndOrientation(d, newp, orn)
+
+        p.stepSimulation()
+        poses = [p.getBasePositionAndOrientation(d)[0] for d in self.drones]
+        centroid = np.mean(poses, axis=0)
+        centroid_x = centroid[0]
+
+        # --- Formation error and bonuses ---
+        targets = [centroid + off for off in self.offsets_centered]
+        errors = [np.linalg.norm(np.array(pose) - tgt) for pose, tgt in zip(poses, targets)]
+        max_err = max(errors)
+        mean_err = np.mean(errors)
+
+        r_form = self.formation_penalty * max_err + self.mean_penalty * mean_err
+
+        # --- Cohesion bonus ---
+        cohesion_bonus = 0.0
+        for i in range(self.num_agents):
+            for j in range(i + 1, self.num_agents):
+                dist = np.linalg.norm(np.array(poses[i]) - np.array(poses[j]))
+                if dist < 2.0:
+                    cohesion_bonus += (2.0 - dist) * self.cohesion_bonus_weight
+        r_form += cohesion_bonus
+
+        # --- Progress reward ---
+        r_prog = self.progress_weight * (centroid_x - self.prev_centroid_x)
+        self.prev_centroid_x = centroid_x
+
+        # --- Alive reward (keep low or 0 for now) ---
+        r_alive = self.alive_reward
+
+        r_goal = 0.0
+        is_success = False
+
+        # --- Goal and formation check ---
+        if (not self.got_goal_bonus
+                and centroid_x >= (self.center_B[0] - self.goal_tol)
+                and max_err <= self.formation_tol):
+            r_goal = self.goal_bonus
+            self.got_goal_bonus = True
+            is_success = True
+
+        # --- Bonus for being within formation tolerance at any time ---
+        formation_in_tol_bonus = 200.0 if max_err <= self.formation_tol else 0.0
+
+        done = self.step_count >= self.max_steps or is_success
+
+        reward = r_form + r_prog + r_alive + r_goal + formation_in_tol_bonus
+
+        info = {
+            "is_success": is_success,
+            "centroid_x": centroid_x,
+            "max_formation_error": max_err,
+            "mean_formation_error": mean_err,
+            "within_formation_tol": float(max_err <= self.formation_tol)
+        }
+        return self._get_obs(), reward, done, info
 
     def _get_obs(self):
         obs = []
-        for drone in self.drones:
-            pos, _ = p.getBasePositionAndOrientation(drone)
-            obs.append(np.array(pos, dtype=np.float32))  # Each agent's position
-        flat_obs = np.concatenate(obs)
-        print("Agent-wise positions:", obs)
-        return flat_obs
+        for d in self.drones:
+            pos = np.array(p.getBasePositionAndOrientation(d)[0])
+            vel = np.array(p.getBaseVelocity(d)[0])
+            rel = self.center_B - pos
+            obs.extend(pos.tolist())
+            obs.extend(rel.tolist())
+            obs.extend(vel.tolist())
+        return np.array(obs, dtype=np.float32)
 
     def close(self):
-        p.disconnect()
-
-# Run a test rollout
-if __name__ == "__main__":
-    env = MultiUAVEnv(render=True)
-    obs = env.reset()
-    for _ in range(200):
-        action = env.action_space.sample()
-        obs, reward, done, _ = env.step(action)
-        time.sleep(1./60.)
-    env.close()
+        p.disconnect(self.client)
