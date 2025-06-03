@@ -44,3 +44,11 @@ The work is being done gradually in clear, focused phases.
 git clone https://github.com/Oldspur/marl-uav-formation.git
 cd marl-uav-formation
 pip install -r requirements.txt
+
+To run training (for PPO or MAPPO):
+```bash
+python marl/train_mappo.py --render 3d
+
+To evaluate trained policy:
+```bash
+python marl/eval_playback.py --render 2d
