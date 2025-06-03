@@ -52,3 +52,14 @@ python marl/train_mappo.py --render 3d
 To evaluate trained policy:
 ```bash
 python marl/eval_playback.py --render 2d
+
+## Status
+
+This is an active research project and still a work in progress.
+
+Commits are dated to reflect the actual progression of the work—newer updates appear as the project advances through each phase.
+
+While the codebase contains working components, some runs might not produce final or stable results yet, as improvements are ongoing across training stability, environment dynamics, and policy tuning.
+
+More updates will be shared as the work progresses.
+
