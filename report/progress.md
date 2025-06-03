@@ -20,3 +20,15 @@ This document tracks the full development of my project on the 3D UAV formation 
 - Defined static target positions (formation layout)
 - Calculated reward = negative distance to formation target
 - Printed debug info for drone positions
+
+## Stage 2 - MAPPO Integration, Logging, and Model Saving
+- Created `train_mappo.py` based on CleanRL PPO
+- Connected PPO policy to `MultiUAVEnv` using shared network
+- Ran training for 300 episodes with live printing of total rewards
+- Integrated Weights & Biases (WandB) for logging reward per episode (www.wandb.ai)
+- Configured project: `marl-uav-formation`, run: `ppo-shared-policy`
+- Logged rewards and config values in WandB
+- Added logic to save best-performing model based on reward
+- Saved best policy and value networks in `marl/models/`
+- Verified model checkpoint saving worked during training
+

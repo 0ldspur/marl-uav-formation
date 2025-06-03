@@ -95,7 +95,7 @@ class MultiUAVEnv(gym.Env):
         centroid = np.mean(poses, axis=0)
         centroid_x = centroid[0]
 
-        # --- Formation error and bonuses ---
+        # Formation error and bonuses
         targets = [centroid + off for off in self.offsets_centered]
         errors = [np.linalg.norm(np.array(pose) - tgt) for pose, tgt in zip(poses, targets)]
         max_err = max(errors)
@@ -103,7 +103,7 @@ class MultiUAVEnv(gym.Env):
 
         r_form = self.formation_penalty * max_err + self.mean_penalty * mean_err
 
-        # --- Cohesion bonus ---
+        # ohesion bonus
         cohesion_bonus = 0.0
         for i in range(self.num_agents):
             for j in range(i + 1, self.num_agents):
@@ -112,17 +112,17 @@ class MultiUAVEnv(gym.Env):
                     cohesion_bonus += (2.0 - dist) * self.cohesion_bonus_weight
         r_form += cohesion_bonus
 
-        # --- Progress reward ---
+        # Progress reward ---
         r_prog = self.progress_weight * (centroid_x - self.prev_centroid_x)
         self.prev_centroid_x = centroid_x
 
-        # --- Alive reward (keep low or 0 for now) ---
+        # Alive reward
         r_alive = self.alive_reward
 
         r_goal = 0.0
         is_success = False
 
-        # --- Goal and formation check ---
+        # Goal and formation check ---
         if (not self.got_goal_bonus
                 and centroid_x >= (self.center_B[0] - self.goal_tol)
                 and max_err <= self.formation_tol):
@@ -130,7 +130,7 @@ class MultiUAVEnv(gym.Env):
             self.got_goal_bonus = True
             is_success = True
 
-        # --- Bonus for being within formation tolerance at any time ---
+        #Bonus for being within formation tolerance at any time
         formation_in_tol_bonus = 200.0 if max_err <= self.formation_tol else 0.0
 
         done = self.step_count >= self.max_steps or is_success

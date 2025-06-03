@@ -1,0 +1,35 @@
+# Byte-compiled / cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Data, models, and experiment logs
+*.pth
+*.pt
+wandb/
+videos/
+*.mp4
+*.avi
+*.mov
+*.png
+*.jpg
+*.jpeg
+
+# Notebooks and checkpoints
+.ipynb_checkpoints/
+
+# Environment and system
+.env
+*.env
+.venv/
+venv/
+env/
+*.egg-info/
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# PyBullet and simulation logs
+*.log
