@@ -50,24 +50,26 @@ This project explores the use of Multi-Agent Reinforcement Learning (MARL) to co
 git clone https://github.com/Oldspur/marl-uav-formation.git
 cd marl-uav-formation
 pip install -r requirements.txt
-
+```
 
 ### Usage
-To train (MAPPO, 4 UAVs, 3D rendering):
-python marl/train_mappo.py --render 3d
 
+To train (MAPPO, 4 UAVs, 3D rendering):
+```bash
+python marl/train_mappo.py --render 3d
+``` 
 To evaluate a trained policy:
+```bash
 python marl/eval_playback.py --render 2d
 
 - Change --render to headless, 2d, or 3d as needed.
 - The default scripts will use the checkpoint in marl/models/best_shared_policy.pth.
 - Sample demo videos and logs are included in the appropriate folders.
-
-###Notes
+```
+### Notes
 - Intermediate checkpoints, large logs, and Weights & Biases (wandb/) artifacts are excluded for clarity and repo size.
 - Only the final/best model checkpoint and a sample evaluation video are included for demonstration.
 - For more results and logs, you can write me for the WandB dashboard.
-```
 
 
 ### Reproducibility
