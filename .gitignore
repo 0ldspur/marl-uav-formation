@@ -1,35 +1,12 @@
-# Byte-compiled / cache
+# Ignore cache, logs, weights & biases, large files
+wandb/
 __pycache__/
 *.pyc
-*.pyo
-
-# Data, models, and experiment logs
-*.pth
-*.pt
-wandb/
-videos/
-*.mp4
+*.pkl
+*.zip
 *.avi
-*.mov
-*.png
-*.jpg
-*.jpeg
-
-# Notebooks and checkpoints
-.ipynb_checkpoints/
-
-# Environment and system
-.env
-*.env
-.venv/
-venv/
-env/
-*.egg-info/
-*.log
-
-# OS files
-.DS_Store
-Thumbs.db
-
-# PyBullet and simulation logs
-*.log
+*.mp4
+*.csv
+marl/models/best_policy_agent_*.pth
+marl/models/best_policy.pth
+checkpoints/
