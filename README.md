@@ -67,7 +67,7 @@ python marl/eval_playback.py --render 2d
 - Intermediate checkpoints, large logs, and Weights & Biases (wandb/) artifacts are excluded for clarity and repo size.
 - Only the final/best model checkpoint and a sample evaluation video are included for demonstration.
 - For more results and logs, you can write me for the WandB dashboard.
-
+```
 
 
 ### Reproducibility
@@ -79,4 +79,5 @@ python marl/eval_playback.py --render 2d
 This project is licensed under the MIT License. See LICENSE for details.
 
 ### Contact
-For questions, feedback, or collaboration opportunities, please just write me through my email. 
+For questions, feedback, or collaboration opportunities, please just write me through my email. \
+
