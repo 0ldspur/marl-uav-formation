@@ -61,11 +61,11 @@ python marl/train_mappo.py --render 3d
 To evaluate a trained policy:
 ```bash
 python marl/eval_playback.py --render 2d
-
+```
 - Change --render to headless, 2d, or 3d as needed.
 - The default scripts will use the checkpoint in marl/models/best_shared_policy.pth.
 - Sample demo videos and logs are included in the appropriate folders.
-```
+
 ### Notes
 - Intermediate checkpoints, large logs, and Weights & Biases (wandb/) artifacts are excluded for clarity and repo size.
 - Only the final/best model checkpoint and a sample evaluation video are included for demonstration.
