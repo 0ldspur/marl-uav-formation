@@ -2,49 +2,47 @@
 
 This project explores the use of Multi-Agent Reinforcement Learning (MARL) to control a fleet of UAVs flying in formation. The goal is to train agents that can independently navigate toward a goal while maintaining a safe and stable formation, without relying on centralized control during execution.
 
-The work is being done gradually in clear, focused phases.
+> **Status:** Active research project — core training and evaluation scripts are included for reproducibility. Ongoing improvements and additional features are expected.
 
+---
 
-## Phase 1 – Project Setup & Environment
-- Set up project structure
-- Installed required packages and dependencies
-- Defined a custom UAV environment using PyBullet
-- Integrated Gym interface for training compatibility
-- Added rendering options (2D and 3D modes)
+## Table of Contents
 
-> At this stage, the drones are modeled with simplified dynamics and can be visualized in both 2D and 3D spaces.
+- [Project Overview](#marl-based-formation-control-for-multi-uav-systems)
+- [Phases](#phases)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Notes](#notes)
+- [Reproducibility](#reproducibility)
+- [License](#license)
+- [Contact](#contact)
 
+---
 
-## Phase 2 – PPO Baseline (2 UAVs)
-- Implemented Proximal Policy Optimization (PPO) using CleanRL-style runner
-- Trained a 2-UAV system to reach goal positions while maintaining spacing
-- Reward design included goal proximity and loose formation error
-- Achieved over 95% success rate and consistent convergence
+## Phases
 
-> This served as a good starting point to establish a stable, single-policy baseline before moving to multi-agent coordination.
+### Phase 1 – Project Setup & Environment
+- Structured the project and installed dependencies
+- Defined a custom UAV environment with PyBullet and Gym interface
+- Implemented flexible rendering (headless, 2D, 3D)
 
-## Phase 3 – MAPPO Extension (4 UAVs)
-- Switched to Multi-Agent PPO (MAPPO) for 4-agent coordination
-- Adopted Centralized Training with Decentralized Execution (CTDE)
-- Shared actor across agents, centralized critic using joint observations
-- Reward structure enhanced with inter-agent cohesion, collision penalty, and entropy scheduling
+### Phase 2 – PPO Baseline (2 UAVs)
+- Implemented Proximal Policy Optimization (PPO)
+- Trained a 2-UAV system with custom rewards for goal and formation
+- Achieved >95% success rate in baseline scenarios
 
-> Results show emerging coordination behaviors like synchronized motion, mid-air corrections, and partial self-recovery.
+### Phase 3 – MAPPO Extension (4 UAVs)
+- Switched to Multi-Agent PPO (MAPPO) for 4 UAVs
+- Centralized Training with Decentralized Execution (CTDE)
+- Enhanced reward: inter-agent cohesion, collision penalty, entropy scheduling
 
+### Phase 4 – Evaluation & Visualization
+- Developed playback scripts for policy visualization
+- Tracked reward, formation error, and agent metrics
+- Evaluations support both 2D and 3D rendering
+- Metrics logged via Weights & Biases (WandB)
 
-## Phase 4 – Evaluation & Visualization
-- Created playback script for policy visualization
-- Logged metrics: reward progression, collision count, entropy, formation error
-- Evaluations run in both 2D and 3D rendering modes
-- Metrics tracked using Weights & Biases (WandB)
-
-## Status
-
-This is an active research project and still a work in progress.
-Commits are dated to reflect the actual progression of the work—newer updates appear as the project advances through each phase.
-While the codebase contains working components, some runs might not produce final or stable results yet, as improvements are ongoing across training stability, environment dynamics, and policy tuning.
-
-###More updates will be shared as the work progresses.
+---
 
 ## Installation
 
@@ -53,11 +51,32 @@ git clone https://github.com/Oldspur/marl-uav-formation.git
 cd marl-uav-formation
 pip install -r requirements.txt
 
-To run training (for PPO or MAPPO):
-```bash
+
+### Usage
+To train (MAPPO, 4 UAVs, 3D rendering):
 python marl/train_mappo.py --render 3d
 
-To evaluate trained policy:
-```bash
+To evaluate a trained policy:
 python marl/eval_playback.py --render 2d
 
+- Change --render to headless, 2d, or 3d as needed.
+- The default scripts will use the checkpoint in marl/models/best_shared_policy.pth.
+- Sample demo videos and logs are included in the appropriate folders.
+
+###Notes
+- Intermediate checkpoints, large logs, and Weights & Biases (wandb/) artifacts are excluded for clarity and repo size.
+- Only the final/best model checkpoint and a sample evaluation video are included for demonstration.
+- For more results and logs, you can write me for the WandB dashboard.
+
+
+
+### Reproducibility
+- All necessary scripts and environment files are provided to reproduce main results from scratch.
+- Training and evaluation scripts are self-contained and documented.
+- See comments in each script for advanced usage and options.
+
+### License
+This project is licensed under the MIT License. See LICENSE for details.
+
+### Contact
+For questions, feedback, or collaboration opportunities, please just write me through my email. 
