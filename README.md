@@ -79,5 +79,5 @@ python marl/eval_playback.py --render 2d
 This project is licensed under the MIT License. See LICENSE for details.
 
 ### Contact
-For questions, feedback, or collaboration opportunities, please just write me through my email. \
+For questions, feedback, or collaboration opportunities, please just write me through my email.
 
