@@ -105,7 +105,7 @@ class MultiUAVEnv(gym.Env):
         max_err = max(errors)
         mean_err = np.mean(errors)
 
-        # Formation penalty (always negative)
+        # Formation penalty (negative)
         r_form = -abs(self.formation_penalty) * max_err + -abs(self.mean_penalty) * mean_err
 
         # Cohesion bonus
