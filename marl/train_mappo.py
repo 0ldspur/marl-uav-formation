@@ -25,7 +25,7 @@ parser.add_argument("--explore-std", type=float, default=0.07)
 parser.add_argument("--resume", action="store_true")
 args = parser.parse_args()
 
-# ───────── CURRICULUM CONFIG ─────────
+# ───────── CURRICULUM CONFIGS ─────────
 curriculum = [
     {"goal_tol": 2.5, "formation_tol": 5.0, "goal_bonus": 500.0, "progress_weight": 2.0, "alive_reward": 2.0, "dist_goal_bonus_weight": 1500.0},
     {"goal_tol": 1.0, "formation_tol": 2.5, "goal_bonus": 900.0, "progress_weight": 1.0, "alive_reward": 0.5, "dist_goal_bonus_weight": 900.0},
@@ -116,7 +116,7 @@ def train():
             last_episode = int(f.read()) + 1
         policy.load_state_dict(torch.load(f"{ckpt_dir}/shared_policy.pth"))
         value.load_state_dict(torch.load(f"{ckpt_dir}/value.pth"))
-        print(f"✅ Resumed from episode {last_episode}")
+        print(f"Resumed from episode {last_episode}")
 
     csv_file = "training_logs.csv"
     if not os.path.exists(csv_file):
@@ -175,7 +175,7 @@ def train():
                 last_info = info  # for logging rewards
                 break
 
-        # ----- MAPPO-style batch update -----
+        # MAPPO batch update
         policy_losses = []
         value_losses = []
 
@@ -257,7 +257,7 @@ def train():
 
         if success_streak >= consecutive_success_needed and curr_stage < len(curriculum) - 1:
             curr_stage += 1
-            print(f"\n🎯 Curriculum advancing to stage {curr_stage+1}: {curriculum[curr_stage]}")
+            print(f"\n Curriculum advancing to stage {curr_stage+1}: {curriculum[curr_stage]}")
             # Update env with new curriculum params
             stage = curriculum[curr_stage]
             env.goal_tol = stage["goal_tol"]
@@ -269,7 +269,7 @@ def train():
             success_streak = 0
 
         if patience >= patience_limit:
-            print("🛑 Early stopping (no successes in patience window)")
+            print("Early stopping (no successes in patience window)")
             break
 
         if ep % 50 == 0:
